@@ -16,7 +16,7 @@ const uint64_t CANARY_FILL = 0xB16B00B5;
 const int NO_LINK = -1;
 const uint8_t EMPTY_BYTE = 0;
 const data_type EMPTY_ELEMENT = 0;
-const size_t START_LIST_SIZE = 3;
+const size_t START_LIST_SIZE = 4;
 
 struct list_element_t
 {
@@ -37,7 +37,7 @@ struct list_t
 };
 
 static list_return_e SetCanary(void* pointer, uint64_t value);
-static list_return_e NumerizeElements(list_t* pointer);
+static list_return_e NumerizeElements(list_t* list, int start_index);
 static list_return_e IncreaseCapacity(list_t* list);
 
 //====================== ACTS_WITH_LIST ===========================
@@ -83,7 +83,10 @@ InitList(list_t** list)
 
     (*list)->canary_end = (list_element_t*) memory_alignment;
 
-    NumerizeElements((*list));
+    NumerizeElements(*list, 1);
+
+    ((*list)->data[0]).next = 0;
+    ((*list)->data[0]).previous = 0;
 
     return LIST_RETURN_SUCCESS;
 }
@@ -96,7 +99,7 @@ ListAddElement(list_t* list,
 
     list_return_e output = LIST_RETURN_SUCCESS;
 
-    if (list->elements_count == list->elements_capacity - 1)
+    if (list->elements_count >= list->elements_capacity - 2)
     {
         if ((output = IncreaseCapacity(list)) != LIST_RETURN_SUCCESS)
         {
@@ -106,11 +109,48 @@ ListAddElement(list_t* list,
 
     list->data[list->free].element = value;
     list->data[list->free].previous = list->data[0].previous;
-    list->data[list->data[0].previous].next = (int) list->free;
-    list->data[0].previous = (int) list->free;
-    list->free = (int) fabs(list->data[list->data[0].previous].next);
+    list->data[list->data[0].previous].next = list->free;
+    list->data[0].previous = list->free;
+    list->free = list->data[list->data[0].previous].next;
     list->data[list->data[0].previous].next = 0;
     list->elements_count += 1;
+
+    return LIST_RETURN_SUCCESS;
+}
+
+list_return_e
+ListAddAfterElement(list_t*   list,
+                    data_type value,
+                    int       index)
+{
+    if ((index >= (int) list->elements_capacity)
+        || (index < 0)
+        || (list->data[index].previous == NO_LINK))
+    {
+        return LIST_RETURN_INCORRECT_VALUE;
+    }
+
+    list_return_e output = LIST_RETURN_SUCCESS;
+    if (list->elements_count >= list->elements_capacity - 2)
+    {
+        if ((output = IncreaseCapacity(list)) != LIST_RETURN_SUCCESS)
+        {
+            return output;
+        }
+    }
+
+    int intermediate_value = 0;
+    list->data[list->free].element = value;
+    list->data[list->free].previous = index;
+
+    intermediate_value = list->data[index].next;
+    list->data[index].next = list->free;
+    list->data[intermediate_value].previous = list->free;
+    list->free = list->data[list->free].next;
+
+    list->data[list->data[index].next].next = intermediate_value;
+
+    list->elements_count++;
 
     return LIST_RETURN_SUCCESS;
 }
@@ -119,7 +159,9 @@ list_return_e
 ListDeleteElement(list_t* list,
                   size_t  index)
 {
-    if ((index > list->elements_capacity) || (list->data[index].previous == NO_LINK))
+    if ((index >= list->elements_capacity)
+        || (index == 0)
+        || (list->data[index].previous == NO_LINK))
     {
         return LIST_RETURN_INCORRECT_VALUE;
     }
@@ -127,10 +169,12 @@ ListDeleteElement(list_t* list,
     list->data[list->data[index].previous].next = list->data[index].next;
     list->data[list->data[index].next].previous = list->data[index].previous;
 
-    list->data[index].element = EMPTY_ELEMENT   ;
+    list->data[index].element = EMPTY_ELEMENT;
     list->data[index].previous = NO_LINK;
-    list->data[index].next = -list->free;
+    list->data[index].next = list->free;
     list->free = (int) index;
+
+    list->elements_count--;
 
     return LIST_RETURN_SUCCESS;
 }
@@ -172,6 +216,13 @@ ListDump(list_t* list)
     }
 
     fprintf(log_file, "<html>\n"
+                      "<body>"
+		                "<h1 style=\"color:rgb(50,150,200);\">"
+	                  "</body>"
+                    //   "<style>h2 {color:\"rgb(212, 58, 56)\";}"
+                    //   "h1 {color:\"rgb(187, 187, 187)\";}"
+                    //   "h4 {color:\"rgb(182, 182, 182)\";} </style>"
+                    //   "style=\"background-color: rgb(48, 48, 48);\""
                       "<h1> LIST_DUMP </h1>\n");
 
     fprintf(log_file, "<p>List element capacity:.......................%zu<br/>",
@@ -208,7 +259,7 @@ ListDump(list_t* list)
                 ((uint8_t*) list->canary_start)[index]);
     }
 
-    fprintf(log_file, "</tr>");
+    fprintf(log_file, "</tr></html>");
 
     return LIST_RETURN_SUCCESS;
 }
@@ -236,13 +287,7 @@ IncreaseCapacity(list_t* list)
                                     + sizeof(uint64_t) * CANARY_SIZE);
     list->elements_capacity *= 2;
 
-
-    for (int index = (int) list->elements_count + 1;
-            index < (int) list->elements_capacity; index++)
-    {
-        list->data[index].previous = NO_LINK;
-        list->data[index].next = -(index + 1);
-    }
+    NumerizeElements(list, (int) list->elements_count + 1);
 
     list->free = (int) list->elements_count + 1;
 
@@ -273,18 +318,16 @@ SetCanary(void* pointer,
 }
 
 static list_return_e
-NumerizeElements(list_t* list)
+NumerizeElements(list_t* list,
+                 int     start_index)
 {
-    for (int index = 1; index < (int) list->elements_capacity; index++)
+    for (int index = start_index; index < (int) list->elements_capacity; index++)
     {
-        (list->data[index]).next = -(index + 1);
+        (list->data[index]).next = index + 1;
         (list->data[index]).previous = NO_LINK;
     }
 
-    (list->data[0]).next = 0;
-    (list->data[0]).previous = 0;
-
-    (*(list->data + list->elements_capacity - 1)).next = 0;
+    list->data[list->elements_capacity - 1].next = NO_LINK;
 
     return LIST_RETURN_SUCCESS;
 }
@@ -307,7 +350,8 @@ ListDot(list_t* list,
         return LIST_RETURN_FILE_OPEN_ERROR;
     }
 
-    fprintf(dot_file, "digraph  G{ bgcolor = \"#303030\"; splines = ortho; overlap=\"0:\"");
+    fprintf(dot_file, "digraph  G{ bgcolor = \"#303030\";
+                       plines = ortho; node [pin = \"true\"]");
 
     for (size_t index = 1; index < list->elements_capacity; index++)
     {
@@ -316,7 +360,7 @@ ListDot(list_t* list,
             fprintf(dot_file, "p%zu[shape = box, style = filled, fillcolor "
                               "= \"#949494\", label = \"prev = %d\", width = 1.8"
                               ",pos = \"%zu.05, 10!\"];\n", index,
-                              list->data[index].previous, 5 + 5 * index - 1);
+                              list->data[index].previous, 4 + 5 * index);
 
             fprintf(dot_file, "i%zu[shape = box, style = filled, fillcolor ="
                               " \"#b6b6b6ff\", label = \"index = %zu\","
@@ -335,7 +379,7 @@ ListDot(list_t* list,
 
             fprintf(dot_file, "inv%zu[shape = record, style=\"invis\","
                               "height = 2, pos = \"%zu.5, 11!\"];",
-                              index, 2 + 5 * index);
+                              index, 7 + 5 * index);
 
             if (list->data[index].previous != 0)
             {
@@ -353,7 +397,7 @@ ListDot(list_t* list,
             fprintf(dot_file, "p%zu[shape = box, style = filled, fillcolor "
                               "= \"#818181ff\", label = \"prev = %d\", width = 1.8"
                               ",pos = \"%zu.05, 10!\"];", index,
-                              list->data[index].previous, 5 + 5 * index - 1);
+                              list->data[index].previous, 4 + 5 * index);
 
             fprintf(dot_file, "i%zu[shape = box, style = filled, fillcolor ="
                               " \"#818181ff\", label = \"index = %zu\","
@@ -373,6 +417,12 @@ ListDot(list_t* list,
             fprintf(dot_file, "inv%zu[shape = box, style=\"invis\","
                               "height = 2, pos = \"%zu.5, 11!\"];",
                               index, 7 + 5 * index);
+
+            if (list->data[index].next != NO_LINK)
+            {
+                fprintf(dot_file, "n%zu -> p%d[color = \"#aaaaaa96\"];",
+                        index, list->data[index].next);
+            }
         }
     }
 
@@ -427,53 +477,5 @@ ListDot(list_t* list,
 //
 //     return true;
 // }
-//
-// static stack_function_errors_e
-// StackNormalizeSize(swag_t* swag)
-// {
-//     if (swag->size == swag->capacity)
-//     {
-//         SetCanary(swag->canary_end, 0);
-//         (swag->canary_start) = (uint8_t*) recalloc(swag->canary_start,
-//                                                    swag->real_capacity_in_bytes,
-//                                                    swag->real_capacity_in_bytes
-//                                                    + sizeof(value_type) * swag->capacity);
-//
-//         swag->real_capacity_in_bytes += sizeof(value_type) * swag->capacity;
-//
-//         swag->stack_data = (value_type*) (swag->canary_start + sizeof(uint64_t) * CANARY_SIZE);
-//         swag->capacity *= 2;
-//
-//         swag->canary_end = (uint8_t*) (swag->stack_data + swag->capacity);
-//         while ((size_t) swag->canary_end % 8 != 0)
-//         {
-//             (swag->canary_end)++;
-//         }
-//         SetCanary(swag->canary_end, CANARY_FILL);
-//     }
-//     else if((2 * swag->size < swag->capacity) && (swag->capacity > 2 * swag->minimal_capacity))
-//     {
-//         SetCanary(swag->canary_end, 0);
-//
-//         swag->canary_start = (uint8_t*) realloc(swag->canary_start,
-//                                                   swag->real_capacity_in_bytes
-//                                                   - sizeof(value_type) * ((swag->capacity) / 2));
-//
-//         swag->real_capacity_in_bytes -= sizeof(value_type) * swag->capacity / 2;
-//
-//         swag->stack_data = (value_type*) (swag->canary_start + sizeof(uint64_t) * CANARY_SIZE);
-//         swag->capacity -= swag->capacity / 2;
-//
-//         swag->canary_end = (uint8_t*) (swag->stack_data + swag->capacity);
-//         while  ((size_t) swag->canary_end % 8 != 0)
-//         {
-//             (swag->canary_end)++;
-//         }
-//         SetCanary(swag->canary_end, CANARY_FILL);
-//     }
-//
-//     return STACK_FUNCTION_SUCCESS;
-// }
-//
 
 
