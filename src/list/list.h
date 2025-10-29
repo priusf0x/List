@@ -21,7 +21,6 @@ list_return_e ListAddElement(list_t* list, data_type value);
 list_return_e ListAddAfterElement(list_t* list, data_type value, int index);
 list_return_e ListDeleteElement(list_t* list, size_t  index);
 list_return_e ListDump(list_t* list);
-list_return_e ListDot(list_t* list, size_t  dump_number);
 list_return_e DestroyList(list_t** list);
 
 FILE* GetLogFile();

@@ -8,7 +8,6 @@
 
 #include "Assert.h"
 #include "tools.h"
-#include "color.h"
 
 const size_t CANARY_SIZE = 4;
 const uint64_t CANARY_FILL = 0xB16B00B5;
@@ -34,17 +33,21 @@ struct list_t
     size_t elements_count;
     size_t elements_capacity;
     size_t real_size_in_bytes;
+    size_t dump_count;
 };
 
 static list_return_e SetCanary(void* pointer, uint64_t value);
 static list_return_e NumerizeElements(list_t* list, int start_index);
 static list_return_e IncreaseCapacity(list_t* list);
+static list_return_e ListDot(list_t* list);
 
 //====================== ACTS_WITH_LIST ===========================
 
 list_return_e
 InitList(list_t** list)
 {
+    ASSERT(list != NULL)
+
     *list = (list_t*) calloc(1, sizeof(list_t));
 
     if (*list == NULL)
@@ -95,7 +98,7 @@ list_return_e
 ListAddElement(list_t* list,
                data_type value)
 {
-    ASSERT(list != NULL)
+    ASSERT(list != NULL);
 
     list_return_e output = LIST_RETURN_SUCCESS;
 
@@ -123,6 +126,8 @@ ListAddAfterElement(list_t*   list,
                     data_type value,
                     int       index)
 {
+    ASSERT(list != NULL);
+
     if ((index >= (int) list->elements_capacity)
         || (index < 0)
         || (list->data[index].previous == NO_LINK))
@@ -159,6 +164,8 @@ list_return_e
 ListDeleteElement(list_t* list,
                   size_t  index)
 {
+    ASSERT(list != NULL)
+
     if ((index >= list->elements_capacity)
         || (index == 0)
         || (list->data[index].previous == NO_LINK))
@@ -209,6 +216,8 @@ GetLogFile()
 list_return_e
 ListDump(list_t* list)
 {
+    list->dump_count++;
+
     FILE* log_file = GetLogFile();
     if (log_file == NULL)
     {
@@ -216,22 +225,30 @@ ListDump(list_t* list)
     }
 
     fprintf(log_file, "<html>\n"
-                      "<body>"
-		                "<h1 style=\"color:rgb(50,150,200);\">"
-	                  "</body>"
-                    //   "<style>h2 {color:\"rgb(212, 58, 56)\";}"
-                    //   "h1 {color:\"rgb(187, 187, 187)\";}"
-                    //   "h4 {color:\"rgb(182, 182, 182)\";} </style>"
-                    //   "style=\"background-color: rgb(48, 48, 48);\""
-                      "<h1> LIST_DUMP </h1>\n");
+		              "<style>"
+                      "body{background-color: rgb(48, 48, 48);}"
+                      "h1{color: rgb(212, 58, 56);}"
+                      "h2{color: rgba(153, 26, 24, 1);}"
+                      "h4{color: rgb(182, 182, 182);}"
+                      "</style>"
+                      "<h1> LIST_DUMP No-%zu</h1>\n", list->dump_count);
 
-    fprintf(log_file, "<p>List element capacity:.......................%zu<br/>",
+    ListDot(list);
+
+    const size_t max_string_size = 50;
+    char img_template[max_string_size] = {};
+    snprintf(img_template, max_string_size - 1, "<img src=\"%zu.png\","
+                                                "height = \"20%%\">",
+                                                list->dump_count);
+    fprintf(log_file, "%s", img_template);
+
+    fprintf(log_file, "<p><h4>List element capacity:............................%zu<br/>",
             list->elements_capacity);
-    fprintf(log_file, "List element count:..........................%zu<br/>",
+    fprintf(log_file, "List element count:.................................%zu<br/>",
             list->elements_count);
-    fprintf(log_file, "List free element number:....................%d<br/>",
+    fprintf(log_file, "List free element number:.....................%d<br/>",
             list->free);
-    fprintf(log_file, "List element capacity in bytes:..............%zu</p>",
+    fprintf(log_file, "List element capacity in bytes:..............%zu</h4></p>",
             list->real_size_in_bytes);
 
     fprintf(log_file,"<h2>LIST_ELEMENTS</h2>");
@@ -239,14 +256,15 @@ ListDump(list_t* list)
     for (size_t index = 0; index < list->elements_capacity; index++)
     {
         fprintf(log_file,
-                "<p><li>index    = %4zu<br/>"
+                "<h4><p><li>index    = %4zu<br/>"
                 "value    = %4f<br/>"
                 "previous = %4d<br/>"
-                "next     = %4d<br/></p></li>", index, list->data[index].element,
+                "next     = %4d<br/></p></li></h4>", index, list->data[index].element,
                 list->data[index].previous, list->data[index].next);
     }
 
-    fprintf(log_file, "<h2>BYTE_ELEMENTS</h2><table><tr>");
+    fprintf(log_file, "<h2>BYTE_ELEMENTS</h2><table style ="
+                      "\"color:rgb(182, 182, 182);><tr>\"");
 
     for (size_t index = 0; index < list->real_size_in_bytes; index++)
     {
@@ -255,11 +273,11 @@ ListDump(list_t* list)
             fprintf(log_file, "</tr><tr>");
         }
 
-        fprintf(log_file, "<td>[%4zu] %3d  </td>", index,
+        fprintf(log_file, "<td>[%4zu] %3d</td>", index,
                 ((uint8_t*) list->canary_start)[index]);
     }
 
-    fprintf(log_file, "</tr></html>");
+    fprintf(log_file, "</tr></table>");
 
     return LIST_RETURN_SUCCESS;
 }
@@ -334,15 +352,14 @@ NumerizeElements(list_t* list,
 
 //================= BETTER_NOT_TO_WATCH ====================
 
-list_return_e
-ListDot(list_t* list,
-        size_t  dump_number)
+static list_return_e
+ListDot(list_t* list)
 {
     const size_t max_string_size = 20;
 
     char name_template[max_string_size] = {};
 
-    snprintf(name_template, max_string_size - 1, "logs/%zu.gv", dump_number);
+    snprintf(name_template, max_string_size - 1, "logs/%zu.gv", list->dump_count);
     FILE* dot_file = fopen(name_template, "w+");
 
     if (dot_file == NULL)
@@ -350,8 +367,8 @@ ListDot(list_t* list,
         return LIST_RETURN_FILE_OPEN_ERROR;
     }
 
-    fprintf(dot_file, "digraph  G{ bgcolor = \"#303030\";
-                       plines = ortho; node [pin = \"true\"]");
+    fprintf(dot_file, "graph  G{ bgcolor = \"#303030\";"
+                      "splines = ortho; node [pin = \"true\"]");
 
     for (size_t index = 1; index < list->elements_capacity; index++)
     {
@@ -381,14 +398,9 @@ ListDot(list_t* list,
                               "height = 2, pos = \"%zu.5, 11!\"];",
                               index, 7 + 5 * index);
 
-            if (list->data[index].previous != 0)
-            {
-                fprintf(dot_file, "p%zu -> n%d[color = \"#d1d1d1\"];",
-                        index, list->data[index].previous);
-            }
             if (list->data[index].next != 0)
             {
-                fprintf(dot_file, "n%zu -> p%d[color = \"#d1d1d1\"];",
+                fprintf(dot_file, "n%zu -- p%d[color = \"#d1d1d1\", dir = both];",
                         index, list->data[index].next);
             }
         }
@@ -420,7 +432,7 @@ ListDot(list_t* list,
 
             if (list->data[index].next != NO_LINK)
             {
-                fprintf(dot_file, "n%zu -> p%d[color = \"#aaaaaa96\"];",
+                fprintf(dot_file, "n%zu -- p%d[color = \"#aaaaaa96\", dir = forward];",
                         index, list->data[index].next);
             }
         }
@@ -433,7 +445,7 @@ ListDot(list_t* list,
                           ",width = 2, pos = \"%d,11.8!\"];",
                           list->data[0].next, 5 + 5 * list->data[0].next);
 
-        fprintf(dot_file, "head -> i%d[color = \"#d1d1d1\"];",
+        fprintf(dot_file, "head -- i%d[color = \"#d1d1d1\", dir = forward];",
                           list->data[0].next);
 
         fprintf(dot_file, "tail[shape = box, style = filled, fillcolor ="
@@ -441,7 +453,7 @@ ListDot(list_t* list,
                           ",width = 2, pos = \"%d,12.4!\"];",
                           list->data[0].previous, 5 + 5 * list->data[0].previous);
 
-        fprintf(dot_file, "tail -> i%d[color = \"#d1d1d1\"];",
+        fprintf(dot_file, "tail -- i%d[color = \"#d1d1d1\",dir = forward];",
                           list->data[0].previous);
     }
 
@@ -450,7 +462,7 @@ ListDot(list_t* list,
                       ",width = 2, pos = \"%d,13!\"];",
                       list->free, 5 + 5 * list->free);
 
-    fprintf(dot_file, "free -> i%d[color = \"#d1d1d1\"];",
+    fprintf(dot_file, "free -- i%d[color = \"#d1d1d1\",dir = forward];",
                       list->free);
 
     fprintf(dot_file, "}");
@@ -459,6 +471,15 @@ ListDot(list_t* list,
     {
         return LIST_RETURN_FILE_CLOSE_ERROR;
     }
+
+    const size_t max_command_size = 200;
+    char command[max_command_size] = {};
+
+    snprintf(command, max_command_size - 1, "neato -Tpng logs/%zu.gv -o"
+             "logs/%zu.png", list->dump_count,
+             list->dump_count);
+
+    system(command);
 
     return LIST_RETURN_SUCCESS;
 }
