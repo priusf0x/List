@@ -6,11 +6,19 @@ int main(void)
 {
     list_t* list = NULL;
 
-    InitList(&list);
+    InitList(&list, 2);
+    ListDump(list);
     ListAddElement(list, 12);
     ListDump(list);
 
     ListAddAfterElement(list, 69, 0);
+    ListAddElement(list, 12);
+    ListAddElement(list, 11);
+    ListAddElement(list, 25);
+    ListAddElement(list, 32);
+    ListAddElement(list, 2);
+    ListDeleteElement(list, 5);
+    ListDeleteElement(list, 1);
 
     ListDump(list);
 

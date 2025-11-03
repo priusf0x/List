@@ -5,8 +5,8 @@
 #include "Assert.h"
 
 void* recalloc(void*  pointer,
-               size_t current_size,
-               size_t new_size)
+               ssize_t current_size,
+               ssize_t new_size)
 {
     ASSERT(pointer != NULL);
 

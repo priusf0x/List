@@ -9,7 +9,7 @@
 #include "tools.h"
 
 
-const size_t LOG_BUFFER_SIZE = 100;
+const ssize_t LOG_BUFFER_SIZE = 100;
 enum detalization_levels_e DETALIZATION_LEVEL = DETALIZATION_LEVEL_DEBUG;
 char LOG_BUFFER[LOG_BUFFER_SIZE] = {0};
 

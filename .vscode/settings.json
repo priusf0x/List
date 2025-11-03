@@ -24,6 +24,10 @@
         "text_encoding": "cpp",
         "type_traits": "cpp",
         "valarray": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "bitset": "cpp",
+        "random": "cpp",
+        "functional": "cpp",
+        "tuple": "cpp"
     }
 }

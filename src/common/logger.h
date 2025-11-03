@@ -12,7 +12,7 @@ enum detalization_levels_e
     DETALIZATION_LEVEL_DEBUG = 1
 };
 
-extern const size_t LOG_BUFFER_SIZE;
+extern const ssize_t LOG_BUFFER_SIZE;
 extern char LOG_BUFFER[];
 extern enum detalization_levels_e DETALIZATION_LEVEL;
 const char LOG_FILE[] = "logs/Logs.txt";

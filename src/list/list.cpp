@@ -9,27 +9,25 @@
 #include "Assert.h"
 #include "tools.h"
 
-const size_t CANARY_SIZE = 4;
+const ssize_t CANARY_SIZE = 4;
 const uint64_t CANARY_FILL = 0xB16B00B5;
 
 const int NO_LINK = -1;
-const uint8_t EMPTY_BYTE = 0;
 const data_type EMPTY_ELEMENT = 0;
-const size_t START_LIST_SIZE = 4;
 
 struct list_element_t
 {
     data_type element;
-    int next;
-    int previous;
+    ssize_t next;
+    ssize_t previous;
 };
 
 struct list_t
 {
-    list_element_t* canary_start;
+    void* canary_start;
     list_element_t* data;
-    list_element_t* canary_end;
-    int free;
+    void* canary_end;
+    ssize_t free;
     size_t elements_count;
     size_t elements_capacity;
     size_t real_size_in_bytes;
@@ -44,7 +42,8 @@ static list_return_e ListDot(list_t* list);
 //====================== ACTS_WITH_LIST ===========================
 
 list_return_e
-InitList(list_t** list)
+InitList(list_t** list,
+         size_t   start_list_size)
 {
     ASSERT(list != NULL)
 
@@ -56,26 +55,25 @@ InitList(list_t** list)
     }
 
     (*list)->real_size_in_bytes = 2 * sizeof(uint64_t) * CANARY_SIZE
-                               + START_LIST_SIZE * sizeof(list_element_t);
+                               + start_list_size * sizeof(list_element_t);
 
-    (*list)->canary_start = (list_element_t*) malloc((*list)->real_size_in_bytes);
+    (*list)->canary_start = calloc((*list)->real_size_in_bytes, sizeof(uint8_t));
 
     if ((*list)->canary_start == NULL)
     {
         return LIST_RETURN_ALLOCATION_ERROR;
     }
 
-    memset((*list)->canary_start, EMPTY_BYTE, (*list)->real_size_in_bytes);
     SetCanary((*list)->canary_start, CANARY_FILL);
 
-    (*list)->data = (list_element_t*) ((uint8_t*) (*list)->canary_start
-                                    + CANARY_SIZE * sizeof(uint64_t));
+    (*list)->data = (list_element_t*) ((uint8_t*)(*list)->canary_start
+                                       + CANARY_SIZE * sizeof(uint64_t));
 
     (*list)->free = 1;
     (*list)->elements_count = 0;
-    (*list)->elements_capacity = START_LIST_SIZE;
+    (*list)->elements_capacity = start_list_size;
 
-    size_t memory_alignment = (size_t) ((*list)->data+ (*list)->elements_capacity);
+    ssize_t memory_alignment = (ssize_t) ((*list)->data + (*list)->elements_capacity);
 
     while (memory_alignment % 8 != 0)
     {
@@ -84,7 +82,7 @@ InitList(list_t** list)
 
     SetCanary((void*) memory_alignment, CANARY_FILL);
 
-    (*list)->canary_end = (list_element_t*) memory_alignment;
+    (*list)->canary_end = (void*) memory_alignment;
 
     NumerizeElements(*list, 1);
 
@@ -144,7 +142,7 @@ ListAddAfterElement(list_t*   list,
         }
     }
 
-    int intermediate_value = 0;
+    ssize_t intermediate_value = 0;
     list->data[list->free].element = value;
     list->data[list->free].previous = index;
 
@@ -192,7 +190,7 @@ DestroyList(list_t** list)
     if ((list != NULL) && (*list != NULL))
     {
         free((*list)->canary_start);
-        memset(*list, EMPTY_BYTE, sizeof(list_t));
+        memset(*list, 0, sizeof(list_t));
 
         free(*list);
 
@@ -201,6 +199,86 @@ DestroyList(list_t** list)
 
     return LIST_RETURN_SUCCESS;
 }
+// ================== NAVIGATION_IN_LIST =======================
+
+list_return_e
+GetElementValue(list_t*    list,
+                size_t     element_index,
+                data_type* value)
+{
+    ASSERT(list);
+    ASSERT(value);
+
+     if ((element_index > list->elements_capacity)
+        || (list->data[element_index].previous == NO_LINK)
+        || (element_index == 0))
+    {
+        return LIST_RETURN_UNDEFINED_ELEMENT;
+    }
+
+    *value = list->data[element_index].element;
+
+    return LIST_RETURN_SUCCESS;
+}
+
+ssize_t
+GetNextElement(list_t* list,
+               size_t  element_index)
+{
+    ASSERT(list);
+
+    if ((element_index > list->elements_capacity)
+        || (list->data[element_index].previous == NO_LINK)
+        || (element_index == 0))
+    {
+        return NO_LINK;
+    }
+
+    return list->data[element_index].next;
+}
+
+ssize_t
+GetPreviousElement(list_t* list,
+                   size_t  element_index)
+{
+    ASSERT(list);
+
+    if ((element_index > list->elements_capacity)
+        || (list->data[element_index].previous == NO_LINK)
+        || (element_index == 0))
+    {
+        return NO_LINK;
+    }
+
+    return list->data[element_index].previous;
+}
+
+ssize_t
+GetHeadElement(list_t* list)
+{
+    ASSERT(list);
+
+    if (list->elements_capacity == 0)
+    {
+        return NO_LINK;
+    }
+
+    return list->data[0].next;
+}
+
+ssize_t
+GetTailElement(list_t* list)
+{
+    ASSERT(list);
+
+    if (list->elements_capacity == 0)
+    {
+        return NO_LINK;
+    }
+
+    return list->data[0].previous;
+}
+
 
 // ================== VERIFICATION =============================
 
@@ -235,7 +313,7 @@ ListDump(list_t* list)
 
     ListDot(list);
 
-    const size_t max_string_size = 50;
+    const ssize_t max_string_size = 50;
     char img_template[max_string_size] = {};
     snprintf(img_template, max_string_size - 1, "<img src=\"%zu.png\","
                                                 "height = \"20%%\">",
@@ -246,7 +324,7 @@ ListDump(list_t* list)
             list->elements_capacity);
     fprintf(log_file, "List element count:.................................%zu<br/>",
             list->elements_count);
-    fprintf(log_file, "List free element number:.....................%d<br/>",
+    fprintf(log_file, "List free element number:.....................%ld<br/>",
             list->free);
     fprintf(log_file, "List element capacity in bytes:..............%zu</h4></p>",
             list->real_size_in_bytes);
@@ -258,8 +336,8 @@ ListDump(list_t* list)
         fprintf(log_file,
                 "<h4><p><li>index    = %4zu<br/>"
                 "value    = %4f<br/>"
-                "previous = %4d<br/>"
-                "next     = %4d<br/></p></li></h4>", index, list->data[index].element,
+                "previous = %4ld<br/>"
+                "next     = %4ld<br/></p></li></h4>", index, list->data[index].element,
                 list->data[index].previous, list->data[index].next);
     }
 
@@ -289,10 +367,10 @@ IncreaseCapacity(list_t* list)
 {
     SetCanary(list->canary_end, 0);
     (list->canary_start) = (list_element_t*) recalloc(list->canary_start,
-                                                list->real_size_in_bytes,
-                                                list->real_size_in_bytes
-                                                + sizeof(list_element_t)
-                                                * list->elements_capacity);
+                                                      list->real_size_in_bytes,
+                                                      list->real_size_in_bytes
+                                                      + sizeof(list_element_t)
+                                                      * list->elements_capacity);
 
     if (list->canary_start == NULL)
     {
@@ -309,7 +387,7 @@ IncreaseCapacity(list_t* list)
 
     list->free = (int) list->elements_count + 1;
 
-    size_t memory_alignment = (size_t) (list->data + list->elements_capacity);
+    ssize_t memory_alignment = (ssize_t) (list->data + list->elements_capacity);
 
     while (memory_alignment % 8 != 0)
     {
@@ -324,10 +402,10 @@ IncreaseCapacity(list_t* list)
 }
 
 static list_return_e
-SetCanary(void* pointer,
+SetCanary(void*    pointer,
           uint64_t value)
 {
-    for (size_t index = 0; index < CANARY_SIZE; index++)
+    for (ssize_t index = 0; index < CANARY_SIZE; index++)
     {
         ((uint64_t*) pointer)[index] = value;
     }
@@ -352,10 +430,14 @@ NumerizeElements(list_t* list,
 
 //================= BETTER_NOT_TO_WATCH ====================
 
+static void DrawFilledElement(list_t* list, size_t  index, FILE* dot_file);
+static void DrawEmptyElement(list_t* list, size_t  index, FILE* dot_file);
+static void DrawInfoElements(list_t* list, FILE* dot_file);
+
 static list_return_e
 ListDot(list_t* list)
 {
-    const size_t max_string_size = 20;
+    const ssize_t max_string_size = 20;
 
     char name_template[max_string_size] = {};
 
@@ -368,111 +450,29 @@ ListDot(list_t* list)
     }
 
     fprintf(dot_file, "graph  G{ bgcolor = \"#303030\";"
-                      "splines = ortho; node [pin = \"true\"]");
+                      "splines = ortho; node [pin = \"true\", shape = box,"
+                       "style = filled,]");
 
     for (size_t index = 1; index < list->elements_capacity; index++)
     {
         if  (list->data[index].previous != NO_LINK)
         {
-            fprintf(dot_file, "p%zu[shape = box, style = filled, fillcolor "
-                              "= \"#949494\", label = \"prev = %d\", width = 1.8"
-                              ",pos = \"%zu.05, 10!\"];\n", index,
-                              list->data[index].previous, 4 + 5 * index);
-
-            fprintf(dot_file, "i%zu[shape = box, style = filled, fillcolor ="
-                              " \"#b6b6b6ff\", label = \"index = %zu\","
-                              "width = 3.7,pos = \"%zu, 11.2!\"];", index,
-                              index, 5 + 5 * index);
-
-            fprintf(dot_file, "v%zu[shape = box, style = filled, fillcolor ="
-                              "\"#b16261\", label = \"value = %f\""
-                              ",width = 3.7, pos = \"%zu,10.6!\"];",
-                              index, list->data[index].element, 5 + 5 * index);
-
-            fprintf(dot_file, "n%zu[shape = box, style = filled, fillcolor ="
-                              " \"#949494\", label = \"next = %d\", width = 1.8,"
-                              " pos = \"%zu.95,10!\"];",
-                              index, list->data[index].next,5 + 5 * index);
-
-            fprintf(dot_file, "inv%zu[shape = record, style=\"invis\","
-                              "height = 2, pos = \"%zu.5, 11!\"];",
-                              index, 7 + 5 * index);
-
-            if (list->data[index].next != 0)
-            {
-                fprintf(dot_file, "n%zu -- p%d[color = \"#d1d1d1\", dir = both];",
-                        index, list->data[index].next);
-            }
+            DrawFilledElement(list, index, dot_file);
         }
         else
         {
-            fprintf(dot_file, "p%zu[shape = box, style = filled, fillcolor "
-                              "= \"#818181ff\", label = \"prev = %d\", width = 1.8"
-                              ",pos = \"%zu.05, 10!\"];", index,
-                              list->data[index].previous, 4 + 5 * index);
-
-            fprintf(dot_file, "i%zu[shape = box, style = filled, fillcolor ="
-                              " \"#818181ff\", label = \"index = %zu\","
-                              "width = 3.7,pos = \"%zu, 11.2!\"];", index,
-                              index, 5 + 5 * index);
-
-            fprintf(dot_file, "v%zu[shape = box, style = filled, fillcolor ="
-                              "\"#818181ff\", label = \"value = %f\""
-                              ",width = 3.7, pos = \"%zu,10.6!\"];",
-                              index, list->data[index].element, 5 + 5 * index);
-
-            fprintf(dot_file, "n%zu[shape = box, style = filled, fillcolor ="
-                              " \"#818181ff\", label = \"next = %d\", width = 1.8,"
-                              " pos = \"%zu.95,10!\"];",
-                              index, list->data[index].next,5 + 5 * index);
-
-            fprintf(dot_file, "inv%zu[shape = box, style=\"invis\","
-                              "height = 2, pos = \"%zu.5, 11!\"];",
-                              index, 7 + 5 * index);
-
-            if (list->data[index].next != NO_LINK)
-            {
-                fprintf(dot_file, "n%zu -- p%d[color = \"#aaaaaa96\", dir = forward];",
-                        index, list->data[index].next);
-            }
+            DrawEmptyElement(list, index, dot_file);
         }
     }
 
-    if (list->elements_count != 0)
-    {
-        fprintf(dot_file, "head[shape = box, style = filled, fillcolor ="
-                          "\"#646464ff\", label = \"head = %d\""
-                          ",width = 2, pos = \"%d,11.8!\"];",
-                          list->data[0].next, 5 + 5 * list->data[0].next);
-
-        fprintf(dot_file, "head -- i%d[color = \"#d1d1d1\", dir = forward];",
-                          list->data[0].next);
-
-        fprintf(dot_file, "tail[shape = box, style = filled, fillcolor ="
-                          "\"#646464ff\", label = \"tail = %d\""
-                          ",width = 2, pos = \"%d,12.4!\"];",
-                          list->data[0].previous, 5 + 5 * list->data[0].previous);
-
-        fprintf(dot_file, "tail -- i%d[color = \"#d1d1d1\",dir = forward];",
-                          list->data[0].previous);
-    }
-
-    fprintf(dot_file, "free[shape = box, style = filled, fillcolor ="
-                      "\"#646464ff\", label = \"free = %d\""
-                      ",width = 2, pos = \"%d,13!\"];",
-                      list->free, 5 + 5 * list->free);
-
-    fprintf(dot_file, "free -- i%d[color = \"#d1d1d1\",dir = forward];",
-                      list->free);
-
-    fprintf(dot_file, "}");
+    DrawInfoElements(list, dot_file);
 
     if (fclose(dot_file) != 0)
     {
         return LIST_RETURN_FILE_CLOSE_ERROR;
     }
 
-    const size_t max_command_size = 200;
+    const ssize_t max_command_size = 200;
     char command[max_command_size] = {};
 
     snprintf(command, max_command_size - 1, "neato -Tpng logs/%zu.gv -o"
@@ -484,10 +484,118 @@ ListDot(list_t* list)
     return LIST_RETURN_SUCCESS;
 }
 
+// ======================= PRINT_INFO_FUNCTION ===================
+
+static void
+DrawFilledElement(list_t* list,
+                  size_t  index,
+                  FILE* dot_file)
+{
+    fprintf(dot_file, "p%zu[ fillcolor = \"#949494\","
+                        "label = \"prev = %ld\", width = 1.8"
+                        ",pos = \"%zu.05, 10!\"];\n", index,
+                        list->data[index].previous, 4 + 5 * index);
+
+    fprintf(dot_file, "i%zu[fillcolor =\"#b6b6b6ff\","
+                        "label = \"index = %zu\", width = 3.7,"
+                        "pos = \"%zu, 11.2!\"];", index,
+                        index, 5 + 5 * index);
+
+    fprintf(dot_file, "v%zu[fillcolor =\"#b16261\","
+                        "label = \"value = %f\"width = 3.7, "
+                        "pos = \"%zu,10.6!\"];", index,
+                        list->data[index].element, 5 + 5 * index);
+
+    fprintf(dot_file, "n%zu[fillcolor =\"#949494\","
+                        "label = \"next = %ld\", width = 1.8,"
+                        " pos = \"%zu.95,10!\"];",
+                        index, list->data[index].next,5 + 5 * index);
+
+    fprintf(dot_file, "inv%zu[style=\"invis\","
+                        "height = 2, pos = \"%zu.5, 11!\"];",
+                        index, 7 + 5 * index);
+
+    if (list->data[index].next != 0)
+    {
+        fprintf(dot_file, "n%zu -- p%ld[color = \"#d1d1d1\", dir = both];",
+                index, list->data[index].next);
+    }
+}
+
+static void
+DrawEmptyElement(list_t* list,
+                 size_t  index,
+                 FILE* dot_file)
+{
+    fprintf(dot_file, "p%zu[fillcolor = \"#818181ff\","
+                      "label = \"prev = %ld\", width = 1.8"
+                      ",pos = \"%zu.05, 10!\"];", index,
+                      list->data[index].previous, 4 + 5 * index);
+
+    fprintf(dot_file, "i%zu[fillcolor =\"#818181ff\","
+                      "label = \"index = %zu\","
+                      "width = 3.7,pos = \"%zu, 11.2!\"];", index,
+                      index, 5 + 5 * index);
+
+    fprintf(dot_file, "v%zu[fillcolor =\"#818181ff\","
+                      "label = \"value = %f\",width = 3.7,"
+                      "pos = \"%zu,10.6!\"];", index,
+                      list->data[index].element, 5 + 5 * index);
+
+    fprintf(dot_file, "n%zu[fillcolor =\"#818181ff\","
+                      "label = \"next = %ld\", width = 1.8,"
+                      " pos = \"%zu.95,10!\"];", index,
+                      list->data[index].next,5 + 5 * index);
+
+    fprintf(dot_file, "inv%zu[style=\"invis\","
+                      "height = 2, pos = \"%zu.5, 11!\"];",
+                      index, 7 + 5 * index);
+
+    if (list->data[index].next != NO_LINK)
+    {
+        fprintf(dot_file, "n%zu -- p%ld[color = \"#aaaaaa96\","
+                "dir = forward];", index, list->data[index].next);
+    }
+}
+
+static void
+DrawInfoElements(list_t* list,
+                 FILE* dot_file)
+{
+    if (list->elements_count != 0)
+    {
+        fprintf(dot_file, "head[fillcolor =\"#646464ff\","
+                          "label = \"head = %ld\""
+                          ",width = 2, pos = \"%ld,11.8!\"];",
+                          list->data[0].next, 5 + 5 * list->data[0].next);
+
+        fprintf(dot_file, "head -- i%ld[color = \"#d1d1d1\", dir = forward];",
+                          list->data[0].next);
+
+        fprintf(dot_file, "tail[fillcolor =\"#646464ff\","
+                          "label = \"tail = %ld\""
+                          ",width = 2, pos = \"%ld,12.4!\"];",
+                          list->data[0].previous, 5 + 5 * list->data[0].previous);
+
+        fprintf(dot_file, "tail -- i%ld[color = \"#d1d1d1\",dir = forward];",
+                          list->data[0].previous);
+    }
+
+    fprintf(dot_file, "free[fillcolor = \"#646464ff\","
+                      "label = \"free = %ld\""
+                      ",width = 2, pos = \"%ld,13!\"];",
+                      list->free, 5 + 5 * list->free);
+
+    fprintf(dot_file, "free -- i%ld[color = \"#d1d1d1\",dir = forward];",
+                      list->free);
+
+    fprintf(dot_file, "}");
+}
+
 // static bool
 // CheckCanary(swag_t* swag)
 // {
-//     for (size_t index = 0; index < CANARY_SIZE; index++)
+//     for (ssize_t index = 0; index < CANARY_SIZE; index++)
 //     {
 //         if ((((uint64_t*) swag->canary_start)[index] != CANARY_FILL) ||
 //         (((uint64_t*) swag->canary_end)[index] != CANARY_FILL))
