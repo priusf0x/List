@@ -97,6 +97,7 @@ ListAddElement(list_t* list,
                data_type value)
 {
     ASSERT(list != NULL);
+    VERIFY_RET(list);
 
     list_return_e output = LIST_RETURN_SUCCESS;
 
@@ -116,6 +117,8 @@ ListAddElement(list_t* list,
     list->data[list->data[0].previous].next = 0;
     list->elements_count += 1;
 
+    VERIFY_RET(list);
+
     return LIST_RETURN_SUCCESS;
 }
 
@@ -125,6 +128,7 @@ ListAddAfterElement(list_t*   list,
                     int       index)
 {
     ASSERT(list != NULL);
+    VERIFY_RET(list);
 
     if ((index >= (int) list->elements_capacity)
         || (index < 0)
@@ -155,6 +159,8 @@ ListAddAfterElement(list_t*   list,
 
     list->elements_count++;
 
+    VERIFY_RET(list);
+
     return LIST_RETURN_SUCCESS;
 }
 
@@ -163,6 +169,7 @@ ListDeleteElement(list_t* list,
                   size_t  index)
 {
     ASSERT(list != NULL)
+    VERIFY_RET(list);
 
     if ((index >= list->elements_capacity)
         || (index == 0)
@@ -180,6 +187,8 @@ ListDeleteElement(list_t* list,
     list->free = (int) index;
 
     list->elements_count--;
+
+    VERIFY_RET(list);
 
     return LIST_RETURN_SUCCESS;
 }
@@ -208,6 +217,7 @@ GetElementValue(list_t*    list,
 {
     ASSERT(list);
     ASSERT(value);
+    VERIFY_RET(list);
 
      if ((element_index > list->elements_capacity)
         || (list->data[element_index].previous == NO_LINK)
@@ -218,6 +228,8 @@ GetElementValue(list_t*    list,
 
     *value = list->data[element_index].element;
 
+    VERIFY_RET(list);
+
     return LIST_RETURN_SUCCESS;
 }
 
@@ -226,6 +238,8 @@ GetNextElement(list_t* list,
                size_t  element_index)
 {
     ASSERT(list);
+    VERIFY_RET(list);
+
 
     if ((element_index > list->elements_capacity)
         || (list->data[element_index].previous == NO_LINK)
@@ -233,6 +247,8 @@ GetNextElement(list_t* list,
     {
         return NO_LINK;
     }
+
+    VERIFY_RET(list);
 
     return list->data[element_index].next;
 }
@@ -242,6 +258,7 @@ GetPreviousElement(list_t* list,
                    size_t  element_index)
 {
     ASSERT(list);
+    VERIFY_RET(list);
 
     if ((element_index > list->elements_capacity)
         || (list->data[element_index].previous == NO_LINK)
@@ -250,6 +267,8 @@ GetPreviousElement(list_t* list,
         return NO_LINK;
     }
 
+    VERIFY_RET(list);
+
     return list->data[element_index].previous;
 }
 
@@ -257,11 +276,14 @@ ssize_t
 GetHeadElement(list_t* list)
 {
     ASSERT(list);
+    VERIFY_RET(list);
 
     if (list->elements_capacity == 0)
     {
         return NO_LINK;
     }
+
+    VERIFY_RET(list);
 
     return list->data[0].next;
 }
@@ -270,19 +292,27 @@ ssize_t
 GetTailElement(list_t* list)
 {
     ASSERT(list);
+    VERIFY_RET(list);
 
     if (list->elements_capacity == 0)
     {
         return NO_LINK;
     }
 
+    VERIFY_RET(list);
+
     return list->data[0].previous;
 }
 
 
-// ================== VERIFICATION =============================
+// ================== LOGGER =============================
 
 const char* LOG_FILE_NAME = "logs/log_file.htm";
+
+static void PrintHTMLHeader(list_t* list, FILE* log_file);
+static void PrintListInfo(list_t* list, FILE* log_file);
+static void PrintElementsInfo(list_t* list, FILE* log_file);
+static void PrintBytesInfo(list_t* list, FILE* log_file);
 
 FILE*
 GetLogFile()
@@ -292,8 +322,12 @@ GetLogFile()
 }
 
 list_return_e
-ListDump(list_t* list)
+ListDump(list_t*     list,
+         const char* comment)
 {
+    ASSERT(list != NULL);
+    ASSERT(comment != NULL);
+
     list->dump_count++;
 
     FILE* log_file = GetLogFile();
@@ -302,60 +336,48 @@ ListDump(list_t* list)
         return LIST_RETURN_FILE_OPEN_ERROR;
     }
 
-    fprintf(log_file, "<html>\n"
-		              "<style>"
-                      "body{background-color: rgb(48, 48, 48);}"
-                      "h1{color: rgb(212, 58, 56);}"
-                      "h2{color: rgba(153, 26, 24, 1);}"
-                      "h4{color: rgb(182, 182, 182);}"
-                      "</style>"
-                      "<h1> LIST_DUMP No-%zu</h1>\n", list->dump_count);
-
+    PrintHTMLHeader(list, log_file);
+    fprintf(log_file, "<h4>Comment:\n\n %s</h4>", comment);
     ListDot(list);
+    PrintListInfo(list, log_file);
+    PrintElementsInfo(list, log_file);
+    PrintBytesInfo(list,log_file);
 
-    const ssize_t max_string_size = 50;
-    char img_template[max_string_size] = {};
-    snprintf(img_template, max_string_size - 1, "<img src=\"%zu.png\","
-                                                "height = \"20%%\">",
-                                                list->dump_count);
-    fprintf(log_file, "%s", img_template);
+    return LIST_RETURN_SUCCESS;
+}
 
-    fprintf(log_file, "<p><h4>List element capacity:............................%zu<br/>",
-            list->elements_capacity);
-    fprintf(log_file, "List element count:.................................%zu<br/>",
-            list->elements_count);
-    fprintf(log_file, "List free element number:.....................%ld<br/>",
-            list->free);
-    fprintf(log_file, "List element capacity in bytes:..............%zu</h4></p>",
-            list->real_size_in_bytes);
+// ================= LIST_VERIFY ======================
 
-    fprintf(log_file,"<h2>LIST_ELEMENTS</h2>");
+static bool CheckCanary(list_t* list);
+static list_return_e CheckElements(list_t* list, size_t* real_count);
 
-    for (size_t index = 0; index < list->elements_capacity; index++)
+list_return_e
+ListVerify(list_t* list)
+{
+    size_t real_count = 0;
+
+    if ((list->canary_start == NULL)
+        || (list->data == NULL)
+        || (list->canary_end == NULL))
     {
-        fprintf(log_file,
-                "<h4><p><li>index    = %4zu<br/>"
-                "value    = %4f<br/>"
-                "previous = %4ld<br/>"
-                "next     = %4ld<br/></p></li></h4>", index, list->data[index].element,
-                list->data[index].previous, list->data[index].next);
+        ListDump(list, "Null arg");
+        return LIST_RETURN_NULL_POINTER;
     }
-
-    fprintf(log_file, "<h2>BYTE_ELEMENTS</h2><table style ="
-                      "\"color:rgb(182, 182, 182);><tr>\"");
-
-    for (size_t index = 0; index < list->real_size_in_bytes; index++)
+    else if (!CheckCanary(list))
     {
-        if (index % 8 == 0)
-        {
-            fprintf(log_file, "</tr><tr>");
-        }
-
-        fprintf(log_file, "<td>[%4zu] %3d</td>", index,
-                ((uint8_t*) list->canary_start)[index]);
+        ListDump(list, "Canary Error");
+        return LIST_RETURN_CANARY_DAMAGED;
     }
-
-    fprintf(log_file, "</tr></table>");
+    else if (CheckElements(list, &real_count) != LIST_RETURN_SUCCESS)
+    {
+        ListDump(list, "Wrong Elements");
+        return LIST_RETURN_NOT_CYCLE;
+    }
+    else if (real_count != list->elements_count)
+    {
+        ListDump(list, "Count Error");
+        return LIST_RETURN_ELEMENT_COUNT_ERROR;
+    }
 
     return LIST_RETURN_SUCCESS;
 }
@@ -365,8 +387,10 @@ ListDump(list_t* list)
 static list_return_e
 IncreaseCapacity(list_t* list)
 {
+    VERIFY_RET(list);
+
     SetCanary(list->canary_end, 0);
-    (list->canary_start) = (list_element_t*) recalloc(list->canary_start,
+    (list->canary_start) = (list_element_t*) recalloc(list->canary_start, // FIXME add backup pointer or etc
                                                       list->real_size_in_bytes,
                                                       list->real_size_in_bytes
                                                       + sizeof(list_element_t)
@@ -398,6 +422,8 @@ IncreaseCapacity(list_t* list)
 
     list->canary_end = (list_element_t*) memory_alignment;
 
+    VERIFY_RET(list);
+
     return LIST_RETURN_SUCCESS;
 }
 
@@ -424,6 +450,51 @@ NumerizeElements(list_t* list,
     }
 
     list->data[list->elements_capacity - 1].next = NO_LINK;
+
+    return LIST_RETURN_SUCCESS;
+}
+
+static bool
+CheckCanary(list_t* list)
+{
+    for (size_t index = 0; index < CANARY_SIZE; index++)
+    {
+        if ((((uint64_t*) list->canary_start)[index] != CANARY_FILL) ||
+        (((uint64_t*) list->canary_end)[index] != CANARY_FILL))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static list_return_e
+CheckElements(list_t* list,
+              size_t* real_count)
+{
+    ssize_t current_elem = 0;
+    ssize_t next_elem = 0;
+
+    size_t count = 0;
+    for (; count <= list->elements_count; count++)
+    {
+        next_elem = list->data[current_elem].next;
+
+        if ((next_elem == NO_LINK) || (list->data[next_elem].previous != current_elem))
+        {
+            return LIST_RETURN_NOT_CYCLE;
+        }
+
+        current_elem = next_elem;
+    }
+
+    if (next_elem != 0)
+    {
+        return LIST_RETURN_ELEMENT_COUNT_ERROR;
+    }
+
+    *real_count = count - 1;
 
     return LIST_RETURN_SUCCESS;
 }
@@ -485,6 +556,77 @@ ListDot(list_t* list)
 }
 
 // ======================= PRINT_INFO_FUNCTION ===================
+
+static void
+PrintHTMLHeader(list_t* list, FILE* log_file)
+{
+    fprintf(log_file, "<html>\n"
+                        "<style>"
+                        "body{background-color: rgb(48, 48, 48);}"
+                        "h1{color: rgb(212, 58, 56);}"
+                        "h2{color: rgba(153, 26, 24, 1);}"
+                        "h4{color: rgb(182, 182, 182);}"
+                        "</style>"
+                        "<h1> LIST_DUMP No-%zu</h1>\n",
+                        list->dump_count);
+}
+
+static void
+PrintListInfo(list_t* list,
+              FILE* log_file)
+{
+    const ssize_t max_string_size = 50;
+    char img_template[max_string_size] = {};
+    snprintf(img_template, max_string_size - 1, "<img src=\"%zu.png\","
+                                                "height = \"20%%\">",
+                                                list->dump_count);
+    fprintf(log_file, "%s", img_template);
+
+    fprintf(log_file, "<p><h4>List element capacity:............................%zu<br/>",
+            list->elements_capacity);
+    fprintf(log_file, "List element count:.................................%zu<br/>",
+            list->elements_count);
+    fprintf(log_file, "List free element number:.....................%ld<br/>",
+            list->free);
+    fprintf(log_file, "List element capacity in bytes:..............%zu</h4>",
+            list->real_size_in_bytes);
+    fprintf(log_file,"<h2>LIST_ELEMENTS</h2>");
+}
+
+static void
+PrintElementsInfo(list_t* list,
+                  FILE* log_file)
+{
+    for (size_t index = 0; index < list->elements_capacity; index++)
+        {
+            fprintf(log_file,
+                    "<h4><p><li>index    = %4zu<br/>"
+                    "value    = %4f<br/>"
+                    "previous = %4ld<br/>"
+                    "next     = %4ld<br/></p></li></h4>", index, list->data[index].element,
+                    list->data[index].previous, list->data[index].next);
+        }
+}
+
+static void
+PrintBytesInfo(list_t* list, FILE* log_file)
+{
+    fprintf(log_file, "<h2>BYTE_ELEMENTS</h2><table style ="
+                      "\"color:rgb(182, 182, 182);><tr>\"");
+
+    for (size_t index = 0; index < list->real_size_in_bytes; index++)
+    {
+        if (index % 8 == 0)
+        {
+            fprintf(log_file, "</tr><tr>");
+        }
+
+        fprintf(log_file, "<td>[%4zu] %3d</td>", index,
+                ((uint8_t*) list->canary_start)[index]);
+    }
+
+    fprintf(log_file, "</tr></table>");
+}
 
 static void
 DrawFilledElement(list_t* list,
@@ -592,19 +734,5 @@ DrawInfoElements(list_t* list,
     fprintf(dot_file, "}");
 }
 
-// static bool
-// CheckCanary(swag_t* swag)
-// {
-//     for (ssize_t index = 0; index < CANARY_SIZE; index++)
-//     {
-//         if ((((uint64_t*) swag->canary_start)[index] != CANARY_FILL) ||
-//         (((uint64_t*) swag->canary_end)[index] != CANARY_FILL))
-//         {
-//             return false;
-//         }
-//     }
-//
-//     return true;
-// }
 
 

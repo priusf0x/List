@@ -28,6 +28,7 @@
         "bitset": "cpp",
         "random": "cpp",
         "functional": "cpp",
-        "tuple": "cpp"
+        "tuple": "cpp",
+        "algorithm": "cpp"
     }
 }

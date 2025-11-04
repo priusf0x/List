@@ -7,9 +7,9 @@ int main(void)
     list_t* list = NULL;
 
     InitList(&list, 2);
-    ListDump(list);
+    ListDump(list, "bar");
     ListAddElement(list, 12);
-    ListDump(list);
+    ListDump(list, "foo");
 
     ListAddAfterElement(list, 69, 0);
     ListAddElement(list, 12);
@@ -20,7 +20,7 @@ int main(void)
     ListDeleteElement(list, 5);
     ListDeleteElement(list, 1);
 
-    ListDump(list);
+    ListDump(list, "meow");
 
     DestroyList(&list);
 

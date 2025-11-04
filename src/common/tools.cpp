@@ -5,12 +5,22 @@
 #include "Assert.h"
 
 void* recalloc(void*  pointer,
-               ssize_t current_size,
-               ssize_t new_size)
+               size_t current_size,
+               size_t new_size)
 {
     ASSERT(pointer != NULL);
 
-    pointer = realloc(pointer, new_size);
+    void* backup_pointer = NULL;
+
+    backup_pointer = realloc(pointer, new_size);
+
+    if (backup_pointer == NULL)
+    {
+        return NULL;
+    }
+
+    pointer = backup_pointer;
+
     memset((char*) pointer + current_size, 0, new_size - current_size);
 
     return pointer;

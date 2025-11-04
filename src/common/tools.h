@@ -3,6 +3,6 @@
 
 #include <stdlib.h>
 
-void* recalloc(void*  pointer, ssize_t current_size, ssize_t new_size);
+void* recalloc(void*  pointer, size_t current_size, size_t new_size);
 
 #endif //TOOLS_H
