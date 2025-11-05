@@ -1,4 +1,4 @@
-<h1 align="left">Processor (DREC TASK)</h1>
+<h1 align="left">List (DREC TASK)</h1>
 
 ###
 
@@ -48,7 +48,7 @@ This library provides you access to fast and safe data struct named "list".
 
 ###
 
-'''bash
+```bash
 list_t* list = NULL;
 
 InitList(&list, 2);
@@ -64,7 +64,7 @@ ListDeleteElement(list, 1);
 
 DestroyList(&list);
 
-'''
+```
 
 
 
