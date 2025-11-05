@@ -10,7 +10,7 @@
 #include "tools.h"
 
 const ssize_t CANARY_SIZE = 4;
-const uint64_t CANARY_FILL = 0xB16B00B5;
+const uint64_t CANARY_FILL = 0xBAB1BAB0BAB1BAB0;
 
 const int NO_LINK = -1;
 const data_type EMPTY_ELEMENT = 0;
@@ -240,7 +240,6 @@ GetNextElement(list_t* list,
     ASSERT(list);
     VERIFY_RET(list);
 
-
     if ((element_index > list->elements_capacity)
         || (list->data[element_index].previous == NO_LINK)
         || (element_index == 0))
@@ -337,7 +336,7 @@ ListDump(list_t*     list,
     }
 
     PrintHTMLHeader(list, log_file);
-    fprintf(log_file, "<h4>Comment:\n\n %s</h4>", comment);
+    fprintf(log_file, "<h4>Comment:\"%s\"</h4>", comment);
     ListDot(list);
     PrintListInfo(list, log_file);
     PrintElementsInfo(list, log_file);
@@ -390,7 +389,7 @@ IncreaseCapacity(list_t* list)
     VERIFY_RET(list);
 
     SetCanary(list->canary_end, 0);
-    (list->canary_start) = (list_element_t*) recalloc(list->canary_start, // FIXME add backup pointer or etc
+    (list->canary_start) = (list_element_t*) recalloc(list->canary_start,
                                                       list->real_size_in_bytes,
                                                       list->real_size_in_bytes
                                                       + sizeof(list_element_t)
@@ -603,7 +602,8 @@ PrintElementsInfo(list_t* list,
                     "<h4><p><li>index    = %4zu<br/>"
                     "value    = %4f<br/>"
                     "previous = %4ld<br/>"
-                    "next     = %4ld<br/></p></li></h4>", index, list->data[index].element,
+                    "next     = %4ld<br/></p></li></h4>", index,
+                    list->data[index].element,
                     list->data[index].previous, list->data[index].next);
         }
 }
@@ -611,17 +611,19 @@ PrintElementsInfo(list_t* list,
 static void
 PrintBytesInfo(list_t* list, FILE* log_file)
 {
-    fprintf(log_file, "<h2>BYTE_ELEMENTS</h2><table style ="
+    fprintf(log_file, "<h2>BYTE_LEGEND</h2><table style ="
                       "\"color:rgb(182, 182, 182);><tr>\"");
 
     for (size_t index = 0; index < list->real_size_in_bytes; index++)
     {
-        if (index % 8 == 0)
+        if (index % 16 == 0)
         {
-            fprintf(log_file, "</tr><tr>");
+            fprintf(log_file, "</tr><tr><td><span style=\"color:"
+                              "rgb(212, 58, 56)\"> %p:   </span></td>",
+                              (uint8_t*) list->data + index);
         }
 
-        fprintf(log_file, "<td>[%4zu] %3d</td>", index,
+        fprintf(log_file, "<td>%4x</td>",
                 ((uint8_t*) list->canary_start)[index]);
     }
 
