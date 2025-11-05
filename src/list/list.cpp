@@ -206,6 +206,11 @@ DestroyList(list_t** list)
         *list = NULL;
     }
 
+    if (fclose(GetLogFile()) != 0)
+    {
+        return LIST_RETURN_CLOSE_FILE_ERROR;
+    }
+
     return LIST_RETURN_SUCCESS;
 }
 // ================== NAVIGATION_IN_LIST =======================
