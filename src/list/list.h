@@ -12,12 +12,10 @@ enum list_return_e
     LIST_RETURN_FILE_OPEN_ERROR,
     LIST_RETURN_FILE_CLOSE_ERROR,
     LIST_RETURN_INCORRECT_VALUE,
-    LIST_RETURN_UNDEFINED_ELEMENT,
     LIST_RETURN_NULL_POINTER,
     LIST_RETURN_CANARY_DAMAGED,
     LIST_RETURN_NOT_CYCLE,
     LIST_RETURN_ELEMENT_COUNT_ERROR,
-    LIST_RETURN_CLOSE_FILE_ERROR
 };
 
 typedef double data_type;
@@ -30,7 +28,7 @@ list_return_e DestroyList(list_t** list);
 // =================== ELEMENT_CONTROL ====================
 
 list_return_e ListAddElement(list_t* list, data_type value);
-list_return_e ListAddAfterElement(list_t* list, data_type value, int index);
+list_return_e ListAddAfterElement(list_t* list, data_type value, size_t index);
 list_return_e ListDeleteElement(list_t* list, size_t  index);
 
 // ================= ELEMENTS_NAVIGATION ==================

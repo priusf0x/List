@@ -125,13 +125,12 @@ ListAddElement(list_t* list,
 list_return_e
 ListAddAfterElement(list_t*   list,
                     data_type value,
-                    int       index)
+                    size_t    index)
 {
     ASSERT(list != NULL);
     VERIFY_RET(list);
 
-    if ((index >= (int) list->elements_capacity)
-        || (index < 0)
+    if ((index >= (size_t) list->elements_capacity)
         || (list->data[index].previous == NO_LINK))
     {
         return LIST_RETURN_INCORRECT_VALUE;
@@ -148,7 +147,7 @@ ListAddAfterElement(list_t*   list,
 
     ssize_t intermediate_value = 0;
     list->data[list->free].element = value;
-    list->data[list->free].previous = index;
+    list->data[list->free].previous = (ssize_t) index;
 
     intermediate_value = list->data[index].next;
     list->data[index].next = list->free;
@@ -208,7 +207,7 @@ DestroyList(list_t** list)
 
     if (fclose(GetLogFile()) != 0)
     {
-        return LIST_RETURN_CLOSE_FILE_ERROR;
+        return LIST_RETURN_FILE_CLOSE_ERROR;
     }
 
     return LIST_RETURN_SUCCESS;
@@ -228,7 +227,7 @@ GetElementValue(list_t*    list,
         || (list->data[element_index].previous == NO_LINK)
         || (element_index == 0))
     {
-        return LIST_RETURN_UNDEFINED_ELEMENT;
+        return LIST_RETURN_INCORRECT_VALUE;
     }
 
     *value = list->data[element_index].element;
