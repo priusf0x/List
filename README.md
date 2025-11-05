@@ -8,23 +8,23 @@
 
 ###
 
+![til](readme_application/preview.png )
+
+###
+
+This library provides you access to fast and safe data struct named "list".
+
+###
+
 <h2 align="left">Installation Guide</h2>
 
+###
 ```bash
 git clone https://github.com/priusf0x/List
 
 ```
 
 Then put all files in your project.
-
-
-###
-
-![til](readme_application/preview.png )
-
-###
-
-This library provides you access to fast and safe data struct named "list".
 
 ###
 
