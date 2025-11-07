@@ -8,7 +8,7 @@ SOURCES  := $(addprefix $(SOURCE_DIR)/, $(SOURCES))
 
 HEADERS = $(wildcard $(SOURCE_DIR)/*.h)
 
-TARGET = list_sester.out
+TARGET = list_tester.out
 
 CC = g++
 

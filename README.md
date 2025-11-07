@@ -34,6 +34,8 @@ Then put all files in your project.
 * `git`
 * `make`
 * `g++`
+* `graphviz`
+* `doxygen(optional)`
 
 Program was tested  and build on specs:
 ```

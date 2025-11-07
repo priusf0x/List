@@ -88,6 +88,10 @@ InitList(list_s** list,
     ((*list)->data[0]).next = 0;
     ((*list)->data[0]).previous = 0;
 
+    #ifndef NSHOWHISTORY
+    ListDump(*list, "Init");
+    #endif
+
     return LIST_RETURN_SUCCESS;
 }
 
@@ -111,6 +115,10 @@ ListAddElement(list_s*   list,
     ListAddAfterElement(list, value, (size_t) GetTailElement(list));
 
     VERIFY_RET(list);
+
+    #ifndef NSHOWHISTORY
+    ListDump(list, "Add");
+    #endif
 
     return LIST_RETURN_SUCCESS;
 }
@@ -153,6 +161,10 @@ ListAddAfterElement(list_s*   list,
 
     VERIFY_RET(list);
 
+    #ifndef NSHOWHISTORY
+    ListDump(list, "AddAfter");
+    #endif
+
     return LIST_RETURN_SUCCESS;
 }
 
@@ -181,6 +193,10 @@ ListDeleteElement(list_s* list,
     list->elements_count--;
 
     VERIFY_RET(list);
+
+    #ifndef NSHOWHISTORY
+    ListDump(list, "Delete");
+    #endif
 
     return LIST_RETURN_SUCCESS;
 }

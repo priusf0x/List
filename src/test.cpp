@@ -11,9 +11,7 @@ int main(void)
     ListAddElement(list, 12);
     ListAddAfterElement(list, 69, 0);
     ListAddElement(list, 12);
-    ListDump(list,"");
     ListAddElement(list, 11);
-    ListDump(list,"");
     ListAddElement(list, 25);
     ListAddElement(list, 32);
     ListAddElement(list, 2);
