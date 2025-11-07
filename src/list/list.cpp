@@ -10,10 +10,10 @@
 #include "tools.h"
 
 const ssize_t CANARY_SIZE = 4;
-const uint64_t CANARY_FILL = 0xBAB1BAB0BAB1BAB0;
+static const uint64_t CANARY_FILL = 0xBAB1BAB0BAB1BAB0;
 
-const int NO_LINK = -1;
-const data_type EMPTY_ELEMENT = 0;
+static const int NO_LINK = -1;
+static const data_type EMPTY_ELEMENT = 0;
 
 struct list_element_t
 {
@@ -24,7 +24,7 @@ struct list_element_t
 
 struct list_t
 {
-    uint64_t* canary_start; // to uint64_t
+    uint64_t* canary_start;
     list_element_t* data;
     uint64_t* canary_end;
     ssize_t free;
@@ -92,7 +92,7 @@ InitList(list_t** list,
 }
 
 list_return_e
-ListAddElement(list_t* list,
+ListAddElement(list_t*   list,
                data_type value)
 {
     ASSERT(list != NULL);
@@ -302,7 +302,7 @@ GetTailElement(const list_t* list)
 
 // ================== LOGGER =============================
 
-const char* LOG_FILE_NAME = "logs/log_file.htm";
+static const char* LOG_FILE_NAME = "logs/log_file.htm";
 
 static void PrintHTMLHeader(FILE* log_file, const char* current_time);
 static void PrintListInfo(const list_t* list, const char* current_time, FILE* log_file);
@@ -314,6 +314,12 @@ GetLogFile()
 {
     static FILE* log_file = fopen(LOG_FILE_NAME, "w+");
     return log_file;
+}
+
+void
+SetLogFileName(const char* log_file_name)
+{
+    LOG_FILE_NAME = log_file_name;
 }
 
 list_return_e
@@ -468,7 +474,7 @@ CheckCanary(const list_t* list)
 
 static list_return_e
 CheckElements(const list_t* list,
-              size_t* real_count)
+              size_t*       real_count)
 {
     ssize_t current_elem = 0;
     ssize_t next_elem = 0;

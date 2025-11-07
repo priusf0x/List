@@ -20,6 +20,9 @@ enum list_return_e
 
 typedef double data_type;
 
+//======================== LIST ===========================
+
+
 // =================== MEMORY_CONTROL =====================
 
 list_return_e InitList(list_t** list, size_t start_list_size);
@@ -42,6 +45,7 @@ ssize_t GetTailElement(const list_t* list);
 // ====================== LIST_LOG ========================
 
 list_return_e ListDump(const list_t* list, const char* comment);
+void SetLogFileName(const char* log_file_name);
 
 FILE* GetLogFile(); // single tone
 
@@ -53,7 +57,6 @@ list_return_e ListVerify(const list_t* list);
 #else
 #define VERIFY_RET(X)
 #endif
-
 
 //=========================================================
 
