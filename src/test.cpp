@@ -4,7 +4,7 @@
 
 int main(void)
 {
-    list_t* list = NULL;
+    list_s* list = NULL;
     SetLogFileName("logs/bebra.htm");
 
     InitList(&list, 2);

@@ -51,7 +51,7 @@ Firmware Version: FX507ZC4.312
 ###
 
 ```bash
-list_t* list = NULL;
+list_s* list = NULL;
 
 InitList(&list, 2);
 ListAddElement(list, 12);

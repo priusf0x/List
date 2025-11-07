@@ -22,7 +22,7 @@ struct list_element_t
     ssize_t previous;
 };
 
-struct list_t
+struct list_s
 {
     uint64_t* canary_start;
     list_element_t* data;
@@ -34,19 +34,19 @@ struct list_t
 };
 
 static list_return_e SetCanary(void* pointer, uint64_t value);
-static list_return_e NumerizeElements(list_t* list, size_t start_index);
-static list_return_e IncreaseCapacity(list_t* list);
-static list_return_e ListDot(const list_t* list, const char* current_time);
+static list_return_e NumerizeElements(list_s* list, size_t start_index);
+static list_return_e IncreaseCapacity(list_s* list);
+static list_return_e ListDot(const list_s* list, const char* current_time);
 
 //====================== ACTS_WITH_LIST ===========================
 
 list_return_e
-InitList(list_t** list,
+InitList(list_s** list,
          size_t   start_list_size)
 {
     ASSERT(list != NULL)
 
-    *list = (list_t*) calloc(1, sizeof(list_t));
+    *list = (list_s*) calloc(1, sizeof(list_s));
 
     if (*list == NULL)
     {
@@ -92,7 +92,7 @@ InitList(list_t** list,
 }
 
 list_return_e
-ListAddElement(list_t*   list,
+ListAddElement(list_s*   list,
                data_type value)
 {
     ASSERT(list != NULL);
@@ -116,7 +116,7 @@ ListAddElement(list_t*   list,
 }
 
 list_return_e
-ListAddAfterElement(list_t*   list,
+ListAddAfterElement(list_s*   list,
                     data_type value,
                     size_t    index)
 {
@@ -157,7 +157,7 @@ ListAddAfterElement(list_t*   list,
 }
 
 list_return_e
-ListDeleteElement(list_t* list,
+ListDeleteElement(list_s* list,
                   size_t  index)
 {
     ASSERT(list != NULL)
@@ -186,12 +186,12 @@ ListDeleteElement(list_t* list,
 }
 
 list_return_e
-DestroyList(list_t** list)
+DestroyList(list_s** list)
 {
     if ((list != NULL) && (*list != NULL))
     {
         free((*list)->canary_start);
-        memset(*list, 0, sizeof(list_t));
+        memset(*list, 0, sizeof(list_s));
 
         free(*list);
 
@@ -208,7 +208,7 @@ DestroyList(list_t** list)
 // ================== NAVIGATION_IN_LIST =======================
 
 list_return_e
-GetElementValue(const list_t* list,
+GetElementValue(const list_s* list,
                 size_t        element_index,
                 data_type*    value)
 {
@@ -231,7 +231,7 @@ GetElementValue(const list_t* list,
 }
 
 ssize_t
-GetNextElement(const list_t* list,
+GetNextElement(const list_s* list,
                size_t        element_index)
 {
     ASSERT(list);
@@ -250,7 +250,7 @@ GetNextElement(const list_t* list,
 }
 
 ssize_t
-GetPreviousElement(const list_t* list,
+GetPreviousElement(const list_s* list,
                    size_t        element_index)
 {
     ASSERT(list);
@@ -269,7 +269,7 @@ GetPreviousElement(const list_t* list,
 }
 
 ssize_t
-GetHeadElement(const list_t* list)
+GetHeadElement(const list_s* list)
 {
     ASSERT(list);
     VERIFY_RET(list);
@@ -285,7 +285,7 @@ GetHeadElement(const list_t* list)
 }
 
 ssize_t
-GetTailElement(const list_t* list)
+GetTailElement(const list_s* list)
 {
     ASSERT(list);
     VERIFY_RET(list);
@@ -305,9 +305,9 @@ GetTailElement(const list_t* list)
 static const char* LOG_FILE_NAME = "logs/log_file.htm";
 
 static void PrintHTMLHeader(FILE* log_file, const char* current_time);
-static void PrintListInfo(const list_t* list, const char* current_time, FILE* log_file);
-static void PrintElementsInfo(const list_t* list, FILE* log_file);
-static void PrintBytesInfo(const list_t* list, FILE* log_file);
+static void PrintListInfo(const list_s* list, const char* current_time, FILE* log_file);
+static void PrintElementsInfo(const list_s* list, FILE* log_file);
+static void PrintBytesInfo(const list_s* list, FILE* log_file);
 
 FILE*
 GetLogFile()
@@ -323,7 +323,7 @@ SetLogFileName(const char* log_file_name)
 }
 
 list_return_e
-ListDump(const list_t* list,
+ListDump(const list_s* list,
          const char*   comment)
 {
     ASSERT(list != NULL);
@@ -351,11 +351,11 @@ ListDump(const list_t* list,
 
 // ================= LIST_VERIFY ======================
 
-static bool CheckCanary(const list_t* list);
-static list_return_e CheckElements(const list_t* list, size_t* real_count);
+static bool CheckCanary(const list_s* list);
+static list_return_e CheckElements(const list_s* list, size_t* real_count);
 
 list_return_e
-ListVerify(const list_t* list)
+ListVerify(const list_s* list)
 {
     size_t real_count = 0;
 
@@ -388,7 +388,7 @@ ListVerify(const list_t* list)
 //============= HELPER_FUNCTIONS ======================
 
 static list_return_e
-IncreaseCapacity(list_t* list)
+IncreaseCapacity(list_s* list)
 {
     VERIFY_RET(list);
 
@@ -443,7 +443,7 @@ SetCanary(void*    pointer,
 }
 
 static list_return_e
-NumerizeElements(list_t* list,
+NumerizeElements(list_s* list,
                  size_t  start_index)
 {
     for (size_t index = start_index; index < list->elements_capacity; index++)
@@ -458,7 +458,7 @@ NumerizeElements(list_t* list,
 }
 
 static bool
-CheckCanary(const list_t* list)
+CheckCanary(const list_s* list)
 {
     for (size_t index = 0; index < CANARY_SIZE; index++)
     {
@@ -473,7 +473,7 @@ CheckCanary(const list_t* list)
 }
 
 static list_return_e
-CheckElements(const list_t* list,
+CheckElements(const list_s* list,
               size_t*       real_count)
 {
     ssize_t current_elem = 0;
@@ -504,12 +504,12 @@ CheckElements(const list_t* list,
 
 //================= BETTER_NOT_TO_WATCH ====================
 
-static void DrawFilledElement(const list_t* list, size_t  index, FILE* dot_file);
-static void DrawEmptyElement(const list_t* list, size_t  index, FILE* dot_file);
-static void DrawInfoElements(const list_t* list, FILE* dot_file);
+static void DrawFilledElement(const list_s* list, size_t  index, FILE* dot_file);
+static void DrawEmptyElement(const list_s* list, size_t  index, FILE* dot_file);
+static void DrawInfoElements(const list_s* list, FILE* dot_file);
 
 static list_return_e
-ListDot(const list_t* list,
+ListDot(const list_s* list,
         const char*   current_time)
 {
     const ssize_t max_string_size = 40;
@@ -576,7 +576,7 @@ PrintHTMLHeader(FILE*       log_file,
 }
 
 static void
-PrintListInfo(const list_t* list,
+PrintListInfo(const list_s* list,
               const char*   current_time,
               FILE*         log_file)
 {
@@ -599,7 +599,7 @@ PrintListInfo(const list_t* list,
 }
 
 static void
-PrintElementsInfo(const list_t* list,
+PrintElementsInfo(const list_s* list,
                   FILE*         log_file)
 {
     for (size_t index = 0; index < list->elements_capacity; index++)
@@ -615,7 +615,7 @@ PrintElementsInfo(const list_t* list,
 }
 
 static void
-PrintBytesInfo(const list_t* list,
+PrintBytesInfo(const list_s* list,
                FILE*         log_file)
 {
     fprintf(log_file, "<h2>BYTE_LEGEND</h2><table style ="
@@ -648,7 +648,7 @@ PrintBytesInfo(const list_t* list,
 }
 
 static void
-DrawFilledElement(const list_t* list,
+DrawFilledElement(const list_s* list,
                   size_t        index,
                   FILE*         dot_file)
 {
@@ -684,7 +684,7 @@ DrawFilledElement(const list_t* list,
 }
 
 static void
-DrawEmptyElement(const list_t* list,
+DrawEmptyElement(const list_s* list,
                  size_t        index,
                  FILE*         dot_file)
 {
@@ -720,7 +720,7 @@ DrawEmptyElement(const list_t* list,
 }
 
 static void
-DrawInfoElements(const list_t* list,
+DrawInfoElements(const list_s* list,
                  FILE*         dot_file)
 {
     if (list->elements_count != 0)

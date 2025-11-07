@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-struct list_t;
+struct list_s;
 
 enum list_return_e
 {
@@ -22,36 +22,37 @@ typedef double data_type;
 
 //======================== LIST ===========================
 
+typedef struct list_s* list_t;
 
 // =================== MEMORY_CONTROL =====================
 
-list_return_e InitList(list_t** list, size_t start_list_size);
-list_return_e DestroyList(list_t** list);
+list_return_e InitList(list_s** list, size_t start_list_size);
+list_return_e DestroyList(list_s** list);
 
 // =================== ELEMENT_CONTROL ====================
 
-list_return_e ListAddElement(list_t* list, data_type value);
-list_return_e ListAddAfterElement(list_t* list, data_type value, size_t index);
-list_return_e ListDeleteElement(list_t* list, size_t  index);
+list_return_e ListAddElement(list_s* list, data_type value);
+list_return_e ListAddAfterElement(list_s* list, data_type value, size_t index);
+list_return_e ListDeleteElement(list_s* list, size_t  index);
 
 // ================= ELEMENTS_NAVIGATION(const proebal) ==================
 
-list_return_e GetElementValue(const list_t* list, size_t element_index, data_type* value);
-ssize_t GetNextElement(const list_t* list, size_t element_index);
-ssize_t GetPreviousElement(const list_t* list, size_t element_index);
-ssize_t GetHeadElement(const list_t* list);
-ssize_t GetTailElement(const list_t* list);
+list_return_e GetElementValue(const list_s* list, size_t element_index, data_type* value);
+ssize_t GetNextElement(const list_s* list, size_t element_index);
+ssize_t GetPreviousElement(const list_s* list, size_t element_index);
+ssize_t GetHeadElement(const list_s* list);
+ssize_t GetTailElement(const list_s* list);
 
 // ====================== LIST_LOG ========================
 
-list_return_e ListDump(const list_t* list, const char* comment);
+list_return_e ListDump(const list_s* list, const char* comment);
 void SetLogFileName(const char* log_file_name);
 
 FILE* GetLogFile(); // single tone
 
 //======================= VERIFY ==========================
 
-list_return_e ListVerify(const list_t* list);
+list_return_e ListVerify(const list_s* list);
 #ifndef NDEBUG
 #define VERIFY_RET(___X) do{list_return_e ___output = ListVerify(___X); if (___output != LIST_RETURN_SUCCESS) { return ___output;}} while(0)
 #else

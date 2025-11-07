@@ -8,7 +8,7 @@ SOURCES  := $(addprefix $(SOURCE_DIR)/, $(SOURCES))
 
 HEADERS = $(wildcard $(SOURCE_DIR)/*.h)
 
-TARGET = list_tester.out
+TARGET = list_sester.out
 
 CC = g++
 
@@ -30,7 +30,7 @@ $(TARGET): $(OBJECTS)
 	@echo "Linked Successfully"
 
 test:
-	@./list_tester.out
+	@./list_sester.out
 
 build: TARGET
 
