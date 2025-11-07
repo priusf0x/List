@@ -26,7 +26,7 @@ git clone https://github.com/priusf0x/List
 
 Then put all files in your project.
 
-### Prerequisites
+###
 
 <h2 align="left">Prerequisites</h2>
 
@@ -46,7 +46,7 @@ Firmware Version: FX507ZC4.312
 ```
 
 
-<h2 align="left">Code example (DREC TASK)</h2>
+<h2 align="left">Code example</h2>
 
 ###
 
