@@ -6,7 +6,7 @@
 struct list_t;
 
 /**
- * \brief Enum class for returning errors
+ * \brief Enum class for returning errors.
  */
 
 enum list_return_e
@@ -23,103 +23,113 @@ enum list_return_e
 };
 
 /**
- * \brief Data type which uses list for storing values
+ * \brief Data type which uses list for storing values.
  */
 typedef double data_type;
+
+//======================= LIST ============================
+
+typedef struct list_s* list_t;
 
 // =================== MEMORY_CONTROL =====================
 
 /**
- * \brief Init function for list
- * \param start_list_size *size_t* start list capacity
- * \param[out] list *list_t*** dst where struct will be storaged
- * \return *list_return_e* returns the result of initalization
+ * \brief Init function for list.
+ * \param start_list_size *size_t* start list capacity.
+ * \param[out] list *list_t** dst where struct will be storaged.
+ * \return *list_return_e* returns the result of initalization.
  */
 list_return_e InitList(list_t** list, size_t start_list_size);
 /**
- * \brief Destructor function for list
- * \param list *list_t*** list that should be destroyed
- * \return *list_return_e* returns the result of destruction
+ * \brief Destructor function for list.
+ * \param list *list_t** list that should be destroyed.
+ * \return *list_return_e* returns the result of destruction.
  */
 list_return_e DestroyList(list_t** list);
 
 // =================== ELEMENT_CONTROL ====================
 /**
- * \brief Function for adding elements to list
+ * \brief Function for adding elements to list.
  * \details Adds the element in the nearest one free position in list.
- * \param list *list_t** list where the element will be added
- * \param[in] value *data_type* value of the element that should be added
- * \return *list_return_e* returns the result of adding
+ * \param list *list_t* list where the element will be added.
+ * \param[in] value *data_type* value of the element that should be added.
+ * \return *list_return_e* returns the result of adding.
  */
 list_return_e ListAddElement(list_t* list, data_type value);
 /**
- * \brief Function for adding elements to list
+ * \brief Function for adding elements to list.
  * \details Adds the element after defined index in list.
- * \param list *list_t** list where the element will be added
- * \param[in] value *data_type* value of the element that should be added
- * \param index *ssize_t* the index after which element will be placed
- * \return *list_return_e* returns the result of adding
+ * \param list *list_t* list where the element will be added.
+ * \param[in] value *data_type* value of the element that should be added.
+ * \param index *ssize_t* the index after which element will be placed.
+ * \return *list_return_e* returns the result of adding.
  */
 list_return_e ListAddAfterElement(list_t* list, data_type value, size_t index);
 /**
- * \brief Function for deleting elements from list
- * \details Deletes the element on *index* position
- * \param list *list_t** list where the element will be deleted
- * \param[in] value *data_type* value of the element that should be added
- * \return *list_return_e* returns the result of deleting
+ * \brief Function for deleting elements from list.
+ * \details Deletes the element on *index* position.
+ * \param list *list_t* list where the element will be deleted.
+ * \param[in] value *data_type* value of the element that should be added.
+ * \return *list_return_e* returns the result of deleting.
  */
 list_return_e ListDeleteElement(list_t* list, size_t  index);
 
 // ================= ELEMENTS_NAVIGATION ==================
 
 /**
- * \brief Function for getting indo
+ * \brief Function for getting value.
  * \details Function for getting element value.
- * \param list *list_t**
- * \param element_index *size_t* index of outcome value
- * \param[out] value *data_type** pointer for returning a value
- * \return *list_return_e* returns the result of adressing
+ * \param list *list_t*
+ * \param element_index *size_t* index of outcome value.
+ * \param[out] value *data_type** pointer for returning a value.
+ * \return *list_return_e* returns the result of adressing.
  */
 list_return_e GetElementValue(list_t* list, size_t element_index, data_type* value);
 /**
- * \brief Navigation function
+ * \brief Navigation function.
  * \details Function for getting index of next element.
- * \param list *list_t**
+ * \param list *list_t*
  * \param element_index *size_t*
- * \return *ssize_t* index of the next element
+ * \return *ssize_t* index of the next element.
  */
 ssize_t GetNextElement(list_t* list, size_t element_index);
 /**
- * \brief Navigation function
+ * \brief Navigation function.
  * \details Function for getting index of previous element.
- * \param list *list_t**
+ * \param list *list_t*
  * \param element_index *size_t*
- * \return *ssize_t* index of the previous element
+ * \return *ssize_t* index of the previous element.
  */
 ssize_t GetPreviousElement(list_t* list, size_t element_index);
 /**
- * \brief Navigation function
+ * \brief Navigation function.
  * \details Function for getting index of the first list element.
- * \param list *list_t**
- * \return *ssize_t* index of the first element
+ * \param list *list_t*
+ * \return *ssize_t* index of the first element.
  */
 ssize_t GetHeadElement(list_t* list);
 /**
  * \brief Navigation function
  * \details Function for getting index of the last list element.
- * \param list *list_t**
- * \return *ssize_t* index of the last element
+ * \param list *list_t*
+ * \return *ssize_t* index of the last element.
  */
 ssize_t GetTailElement(list_t* list);
 
 // ====================== LIST_LOG ========================
 /**
- * \brief Navigation function
- * \details Function for getting index of the last list element.
+ * \brief Log Function
  * \param comment *const char** comment for adding in dump.
- * \param list *list_t**
+ * \param list *list_t*
  */
 list_return_e ListDump(list_t* list, const char* comment);
+
+/**
+ * \brief Log Function
+ * \details Set log file name
+ * \param log_file_name *const char**
+ */
+void SetLogFileName(const char* log_file_name);
 
 FILE* GetLogFile(); // single tone
 
