@@ -16,7 +16,7 @@ This library provides you access to fast and safe data struct named "list".
 
 ###
 
-<h2 align="left">Installation Guide</h2>
+<h2 align="left">Installation and setup guide</h2>
 
 ###
 ```bash
@@ -26,35 +26,25 @@ git clone https://github.com/priusf0x/List
 
 Then put all files in your project.
 
-###
+### Prerequisites
 
-<h2 align="left">Memory Usage (DREC TASK)</h2>
-
-###
-
-|Function name| Description |
-| --- | --- |
-|list_return_e InitList(list_t** list, size_t start_list_size)| initialize pointer to struct list_t with element capacity of start_list_size |
-|list_return_e DestroyList(list_t** list)|safely destroy struct list_t|
+<h2 align="left">Prerequisites</h2>
 
 ###
+* `git`
+* `make`
+* `g++`
 
-<h2 align="left">List Usage (DREC TASK)</h2>
+Program was tested  and build on specs:
+```
+Operating System: Manjaro Linux
+          Kernel: Linux 6.12.41-1-MANJARO
+    Architecture: x86-64
+ Hardware Vendor: ASUSTeK COMPUTER INC.
+  Hardware Model: ASUS TUF Gaming F15 FX507ZC4_FX507ZC4
+Firmware Version: FX507ZC4.312
+```
 
-###
-
-|Function name| Description |
-| --- | --- |
-|list_return_e ListAddElement(list_t* list, data_type value)| adding element to the end of the list |
-|list_return_e ListAddAfterElement(list_t* list, data_type value, int index)|adding element after index_elem|
-|list_return_e ListDeleteElement(list_t* list, size_t  index)|deleting index_elem|
-|list_return_e GetElementValue(list_t* list, size_t element_index, data_type* value)| get value of index_elem|
-|ssize_t GetNextElement(list_t* list, size_t element_index)| get index of element which is located after index_elem|
-|ssize_t GetPreviousElement(list_t* list, size_t element_index)|get index of element which is located before index_elem|
-|ssize_t GetHeadElement(list_t* list)| get index of the first element in list|
-|ssize_t GetTailElement(list_t* list)| get index of the last element in list|
-
-###
 
 <h2 align="left">Code example (DREC TASK)</h2>
 

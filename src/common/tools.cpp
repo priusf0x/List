@@ -1,6 +1,9 @@
 #include "tools.h"
 
 #include <string.h>
+#include <stdio.h>
+#include <time.h>
+#include <math.h>
 
 #include "Assert.h"
 
@@ -8,8 +11,6 @@ void* recalloc(void*  pointer,
                size_t current_size,
                size_t new_size)
 {
-    ASSERT(pointer != NULL);
-
     void* backup_pointer = NULL;
 
     backup_pointer = realloc(pointer, new_size);
@@ -25,3 +26,20 @@ void* recalloc(void*  pointer,
 
     return pointer;
 }
+
+void
+GetTime(char*        current_time,
+        const size_t string_size)
+{
+    time_t t;
+    struct tm *tmp;
+    time(&t);
+    char* tmp_string = (char*) calloc(string_size, sizeof(char));
+    tmp = localtime(&t);
+    clock_t start_t = clock();
+    strftime(tmp_string, string_size, "%Y-%m-%H-%M-%S", tmp);
+    snprintf(current_time, string_size,"%s-%g", tmp_string,
+            1000000000 * (((double) (start_t % CLOCKS_PER_SEC)) / CLOCKS_PER_SEC));
+    free(tmp_string);
+}
+

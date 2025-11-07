@@ -31,25 +31,25 @@ list_return_e ListAddElement(list_t* list, data_type value);
 list_return_e ListAddAfterElement(list_t* list, data_type value, size_t index);
 list_return_e ListDeleteElement(list_t* list, size_t  index);
 
-// ================= ELEMENTS_NAVIGATION ==================
+// ================= ELEMENTS_NAVIGATION(const proebal) ==================
 
-list_return_e GetElementValue(list_t* list, size_t element_index, data_type* value);
-ssize_t GetNextElement(list_t* list, size_t element_index);
-ssize_t GetPreviousElement(list_t* list, size_t element_index);
-ssize_t GetHeadElement(list_t* list);
-ssize_t GetTailElement(list_t* list);
+list_return_e GetElementValue(const list_t* list, size_t element_index, data_type* value);
+ssize_t GetNextElement(const list_t* list, size_t element_index);
+ssize_t GetPreviousElement(const list_t* list, size_t element_index);
+ssize_t GetHeadElement(const list_t* list);
+ssize_t GetTailElement(const list_t* list);
 
 // ====================== LIST_LOG ========================
 
-list_return_e ListDump(list_t* list, const char* comment);
+list_return_e ListDump(const list_t* list, const char* comment);
 
 FILE* GetLogFile(); // single tone
 
 //======================= VERIFY ==========================
 
-list_return_e ListVerify(list_t* list);
+list_return_e ListVerify(const list_t* list);
 #ifndef NDEBUG
-#define VERIFY_RET(X) if (ListVerify(X) != 0) {return ListVerify(X);}
+#define VERIFY_RET(___X) do{list_return_e ___output = ListVerify(___X); if (___output != LIST_RETURN_SUCCESS) { return ___output;}} while(0)
 #else
 #define VERIFY_RET(X)
 #endif
